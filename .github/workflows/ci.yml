@@ -34,7 +34,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest tests/unit/test_simple*.py -v --tb=short --no-header
+        pytest tests/unit/test_simple_models.py tests/unit/test_simple_services.py -v --tb=short --no-header
 
     - name: Run linting
       run: |
