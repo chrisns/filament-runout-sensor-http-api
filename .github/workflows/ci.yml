@@ -78,8 +78,4 @@ jobs:
 
     - name: Test demo mode initialization
       run: |
-        python -c "
-from src.services import SensorMonitor
-monitor = SensorMonitor(demo_mode=True)
-print('Demo mode monitor created successfully')
-"
+        python -c "from src.services import SensorMonitor; monitor = SensorMonitor(demo_mode=True); print('Demo mode monitor created successfully')"
