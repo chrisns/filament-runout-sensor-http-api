@@ -4,7 +4,19 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, AsyncMock
 from datetime import datetime
 import asyncio
+import sys
 
+# Mock hardware-related modules before importing
+sys.modules['src.lib.mcp2221_sensor.connection'] = MagicMock()
+sys.modules['src.lib.mcp2221_sensor.pulse_detector'] = MagicMock()
+
+# Mock the entire mcp2221_sensor module with expected exports
+mock_mcp_module = MagicMock()
+mock_mcp_module.MCP2221Manager = MagicMock
+mock_mcp_module.PulseDetector = MagicMock
+sys.modules['src.lib.mcp2221_sensor'] = mock_mcp_module
+
+# Now we can safely import services
 from src.services import SensorMonitor, DataAggregator, SessionStorage
 from src.models import SensorReading, SessionMetrics, AlertEvent
 
