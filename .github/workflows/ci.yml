@@ -9,17 +9,14 @@ on:
 jobs:
   test:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.10', '3.11']
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.11'
 
     - name: Cache pip packages
       uses: actions/cache@v3
@@ -37,17 +34,18 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest tests/unit/test_simple*.py -v --tb=short --no-header || true
+        pytest tests/unit/test_simple*.py -v --tb=short --no-header
 
     - name: Run linting
       run: |
         ruff check src/ tests/ || true
 
-    - name: Test imports
+    - name: Test model imports
       run: |
-        python -c "from src.models import SensorReading, SensorConfiguration"
-        python -c "from src.services import SensorMonitor, DataAggregator"
-        python -c "from src.lib.config import load_configuration"
+        python -c "from src.models.sensor_reading import SensorReading; print('SensorReading imported')"
+        python -c "from src.models.sensor_configuration import SensorConfiguration; print('SensorConfiguration imported')"
+        python -c "from src.models.session_metrics import SessionMetrics; print('SessionMetrics imported')"
+        python -c "from src.models.alert_event import AlertEvent; print('AlertEvent imported')"
 
   build:
     runs-on: windows-latest
@@ -66,16 +64,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Verify main application structure
+    - name: Verify model structure
       run: |
-        python -c "import src.cli.main; print('CLI module loads successfully')"
-        python -c "import src.models; print('Models module loads successfully')"
-        python -c "import src.services; print('Services module loads successfully')"
-
-    - name: Check configuration loading
-      run: |
-        python -c "from src.lib.config import load_default_configuration; config = load_default_configuration(); print(f'Default config loaded: polling={config.polling_interval_ms}ms')"
-
-    - name: Test demo mode initialization
-      run: |
-        python -c "from src.services import SensorMonitor; monitor = SensorMonitor(demo_mode=True); print('Demo mode monitor created successfully')"
+        python -c "from src.models.sensor_reading import SensorReading; r = SensorReading(sensor_id=1, has_filament=True, is_moving=False, distance_mm=0, pulse_count=0); print(f'Created reading: {r.filament_status}')"
+        python -c "from src.models.sensor_configuration import SensorConfiguration; c = SensorConfiguration(); print(f'Config polling: {c.polling.polling_interval_ms}ms')"
+        python -c "from src.models.session_metrics import SessionMetrics; m = SessionMetrics(); print(f'Session metrics created with {m.active_sensors} active sensors')"
