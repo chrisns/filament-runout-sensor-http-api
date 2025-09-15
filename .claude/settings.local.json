@@ -9,7 +9,10 @@
       "mcp__perplexity-researcher__perplexity_ask",
       "Bash(gh repo create:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
     ]
   },
   "outputStyle": "default",
