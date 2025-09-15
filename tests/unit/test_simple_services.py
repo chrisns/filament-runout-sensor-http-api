@@ -106,12 +106,14 @@ class TestAlertEventSimple:
         alert = AlertEvent(
             alert_type=AlertType.RUNOUT_DETECTED,
             severity=AlertSeverity.CRITICAL,
-            message="Filament runout detected on sensor 1"
+            message="Filament runout detected on sensor 1",
+            sensor_id=1  # Required for sensor-related alerts
         )
 
         assert alert.alert_type == "runout_detected"
         assert alert.severity == "critical"
         assert alert.message == "Filament runout detected on sensor 1"
+        assert alert.sensor_id == 1
         assert alert.timestamp is not None
 
     def test_alert_with_sensor_context(self):
