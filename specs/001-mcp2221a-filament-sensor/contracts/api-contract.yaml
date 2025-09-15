@@ -1,0 +1,384 @@
+openapi: 3.0.0
+info:
+  title: MCP2221A Filament Sensor Monitor API
+  version: 0.1.0
+  description: HTTP API for dual filament sensor monitoring system
+
+servers:
+  - url: http://localhost:5002
+    description: Local monitoring server
+
+paths:
+  /status:
+    get:
+      summary: Get current sensor status
+      description: Returns real-time status of both sensors including filament presence and usage
+      operationId: getStatus
+      responses:
+        '200':
+          description: Current system and sensor status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                timestamp: "2025-09-15T10:30:00Z"
+                system:
+                  connected: true
+                  version: "0.1.0"
+                  uptime_seconds: 3600
+                sensors:
+                  - id: 1
+                    has_filament: true
+                    is_moving: true
+                    usage_meters: 1.234
+                    last_movement: "2025-09-15T10:29:55Z"
+                  - id: 2
+                    has_filament: true
+                    is_moving: false
+                    usage_meters: 0.456
+                    last_movement: "2025-09-15T09:15:00Z"
+
+  /config:
+    get:
+      summary: Get current configuration
+      description: Returns sensor pin assignments and calibration settings
+      operationId: getConfig
+      responses:
+        '200':
+          description: Current configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationResponse'
+
+    post:
+      summary: Update configuration
+      description: Modify sensor settings and calibration
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigurationUpdate'
+      responses:
+        '200':
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationResponse'
+        '400':
+          description: Invalid configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /alerts:
+    get:
+      summary: Get unacknowledged alerts
+      description: Returns list of active alerts requiring attention
+      operationId: getAlerts
+      parameters:
+        - name: sensor_id
+          in: query
+          description: Filter by sensor ID
+          schema:
+            type: integer
+            enum: [1, 2]
+        - name: severity
+          in: query
+          description: Filter by severity level
+          schema:
+            type: string
+            enum: [INFO, WARNING, ERROR, CRITICAL]
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+
+  /alerts/{alertId}/acknowledge:
+    post:
+      summary: Acknowledge an alert
+      description: Mark an alert as acknowledged
+      operationId: acknowledgeAlert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alert acknowledged
+        '404':
+          description: Alert not found
+
+  /metrics:
+    get:
+      summary: Get session metrics
+      description: Returns cumulative metrics for current session
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Session metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  /ws:
+    get:
+      summary: WebSocket endpoint for real-time updates
+      description: Establishes WebSocket connection for live sensor data
+      operationId: websocketConnect
+      responses:
+        '101':
+          description: Switching Protocols to WebSocket
+
+components:
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - timestamp
+        - system
+        - sensors
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        system:
+          $ref: '#/components/schemas/SystemStatus'
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorStatus'
+          minItems: 2
+          maxItems: 2
+
+    SystemStatus:
+      type: object
+      required:
+        - connected
+        - version
+        - uptime_seconds
+      properties:
+        connected:
+          type: boolean
+          description: MCP2221A USB connection status
+        version:
+          type: string
+          description: Application version
+        uptime_seconds:
+          type: number
+          description: System uptime in seconds
+
+    SensorStatus:
+      type: object
+      required:
+        - id
+        - has_filament
+        - is_moving
+        - usage_meters
+      properties:
+        id:
+          type: integer
+          enum: [1, 2]
+        has_filament:
+          type: boolean
+          description: Filament presence detected
+        is_moving:
+          type: boolean
+          description: Movement currently detected
+        usage_meters:
+          type: number
+          description: Total filament used in meters
+        last_movement:
+          type: string
+          format: date-time
+          description: Timestamp of last detected movement
+
+    ConfigurationResponse:
+      type: object
+      required:
+        - sensors
+        - polling
+      properties:
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorConfig'
+        polling:
+          $ref: '#/components/schemas/PollingConfig'
+
+    SensorConfig:
+      type: object
+      required:
+        - id
+        - movement_pin
+        - runout_pin
+        - calibration_mm_per_pulse
+        - enabled
+      properties:
+        id:
+          type: integer
+          enum: [1, 2]
+        movement_pin:
+          type: integer
+          minimum: 0
+          maximum: 3
+        runout_pin:
+          type: integer
+          minimum: 0
+          maximum: 3
+        calibration_mm_per_pulse:
+          type: number
+          minimum: 0.1
+          maximum: 10.0
+          default: 2.88
+        enabled:
+          type: boolean
+
+    PollingConfig:
+      type: object
+      required:
+        - interval_ms
+        - debounce_ms
+      properties:
+        interval_ms:
+          type: integer
+          minimum: 10
+          maximum: 1000
+          default: 100
+        debounce_ms:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 2
+
+    ConfigurationUpdate:
+      type: object
+      properties:
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorConfig'
+        polling:
+          $ref: '#/components/schemas/PollingConfig'
+
+    Alert:
+      type: object
+      required:
+        - id
+        - timestamp
+        - sensor_id
+        - event_type
+        - severity
+        - message
+        - acknowledged
+      properties:
+        id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        sensor_id:
+          type: integer
+          enum: [1, 2]
+        event_type:
+          type: string
+          enum:
+            - RUNOUT_DETECTED
+            - FILAMENT_INSERTED
+            - MOVEMENT_STARTED
+            - MOVEMENT_STOPPED
+            - SENSOR_DISCONNECTED
+            - SENSOR_RECONNECTED
+        severity:
+          type: string
+          enum: [INFO, WARNING, ERROR, CRITICAL]
+        message:
+          type: string
+        acknowledged:
+          type: boolean
+
+    MetricsResponse:
+      type: object
+      required:
+        - session_start
+        - sensors
+      properties:
+        session_start:
+          type: string
+          format: date-time
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorMetrics'
+
+    SensorMetrics:
+      type: object
+      required:
+        - id
+        - total_pulses
+        - total_distance_m
+        - runout_events
+        - active_time_seconds
+        - idle_time_seconds
+      properties:
+        id:
+          type: integer
+          enum: [1, 2]
+        total_pulses:
+          type: integer
+        total_distance_m:
+          type: number
+        runout_events:
+          type: integer
+        active_time_seconds:
+          type: number
+        idle_time_seconds:
+          type: number
+        average_speed_mm_per_s:
+          type: number
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    WebSocketMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+        - data
+      properties:
+        type:
+          type: string
+          enum:
+            - sensor_update
+            - alert
+            - system_status
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          description: Message-specific payload

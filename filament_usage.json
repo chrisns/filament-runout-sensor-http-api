@@ -1,0 +1,18 @@
+{
+  "sensor_1": {
+    "total_pulses": 1756,
+    "total_distance_mm": 5057.280000000151,
+    "total_distance_m": 5.0572800000001505,
+    "total_runout_events": 0
+  },
+  "sensor_2": {
+    "total_pulses": 0,
+    "total_distance_mm": 0.0,
+    "total_distance_m": 0.0,
+    "total_runout_events": 0
+  },
+  "first_use_date": "2025-09-15T18:35:08.552062",
+  "last_update_date": "2025-09-15T19:45:36.839911",
+  "total_distance_all_mm": 5057.280000000151,
+  "total_distance_all_m": 5.0572800000001505
+}

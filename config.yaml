@@ -1,0 +1,28 @@
+sensors:
+  sensor_1:
+    movement_pin: 0
+    runout_pin: 1
+    calibration_mm_per_pulse: 2.88
+    enabled: true
+  sensor_2:
+    movement_pin: 2
+    runout_pin: 3
+    calibration_mm_per_pulse: 2.88
+    enabled: true
+
+polling:
+  interval_ms: 100
+  debounce_ms: 2
+  timeout_seconds: 5
+
+api:
+  port: 5002
+  host: "0.0.0.0"
+
+display:
+  refresh_rate_ms: 100
+  show_graphs: false
+
+logging:
+  level: INFO
+  format: json

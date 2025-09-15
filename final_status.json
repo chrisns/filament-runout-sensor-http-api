@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-09-15T18:30:01.461076",
+  "uptime_seconds": 19.315098,
+  "system": {
+    "connected": true,
+    "version": "2.0.0"
+  },
+  "sensors": [
+    {
+      "id": 1,
+      "has_filament": true,
+      "is_moving": true,
+      "usage_meters": 0.01728,
+      "last_movement": "2025-09-15T18:30:00.684682",
+      "pulse_count": 6,
+      "speed_mm_per_s": 0.76475159112276,
+      "runout_events": 0
+    },
+    {
+      "id": 2,
+      "has_filament": true,
+      "is_moving": false,
+      "usage_meters": 0.0,
+      "last_movement": null,
+      "pulse_count": 0,
+      "speed_mm_per_s": 0.0,
+      "runout_events": 0
+    }
+  ]
+}

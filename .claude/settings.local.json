@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(mkdir:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "mcp__perplexity-researcher__perplexity_ask",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  },
+  "outputStyle": "default",
+  "spinnerTipsEnabled": false
+}

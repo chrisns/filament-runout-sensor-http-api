@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-09-15T19:00:00.576570",
+  "uptime_seconds": 2625.039553,
+  "sensors": {
+    "1": {
+      "has_filament": false,
+      "is_moving": true,
+      "pulse_count": 1261,
+      "distance_mm": 3631.68,
+      "last_movement": "2025-09-15T18:59:59.953080",
+      "runout_events": 13
+    },
+    "2": {
+      "has_filament": false,
+      "is_moving": false,
+      "pulse_count": 0,
+      "distance_mm": 0.0,
+      "last_movement": null,
+      "runout_events": 13
+    }
+  }
+}
