@@ -1,5 +1,5 @@
 # Core dependencies
-EasyMCP2221==1.7.2
+EasyMCP2221==1.8.3
 fastapi==0.111.1
 uvicorn[standard]==0.30.6
 textual==0.47.1
