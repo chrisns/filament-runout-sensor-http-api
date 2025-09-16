@@ -146,6 +146,21 @@ class FilamentMonitor:
                 gp3='GPIO_IN'   # Sensor 2 Runout
             )
             self.add_message("[OK] Connected to MCP2221A")
+
+            # Read initial GPIO state to set correct filament status
+            initial_gpio = self.read_sensors()
+            if initial_gpio[1] is not None:  # GP1 = Sensor 1 Runout
+                self.sensor_data[1]['has_filament'] = (initial_gpio[1] == 1)  # HIGH = filament present
+                if not self.sensor_data[1]['has_filament']:
+                    self.add_message("[INIT] Sensor 1: No filament detected")
+            if initial_gpio[3] is not None:  # GP3 = Sensor 2 Runout
+                self.sensor_data[2]['has_filament'] = (initial_gpio[3] == 1)  # HIGH = filament present
+                if not self.sensor_data[2]['has_filament']:
+                    self.add_message("[INIT] Sensor 2: No filament detected")
+
+            # Store initial state to avoid false change detections
+            self.last_gpio = initial_gpio
+
             return True
         except Exception as e:
             self.add_message(f"[ERROR] Could not connect: {e}")
@@ -179,7 +194,13 @@ class FilamentMonitor:
                 current_gpio = self.read_sensors()
                 current_time = time.time()
 
-                # Process each GPIO pin
+                # Always update filament status directly from GPIO
+                if current_gpio[1] is not None:  # GP1 = Sensor 1 Runout
+                    self.sensor_data[1]['has_filament'] = (current_gpio[1] == 1)  # HIGH = filament present
+                if current_gpio[3] is not None:  # GP3 = Sensor 2 Runout
+                    self.sensor_data[2]['has_filament'] = (current_gpio[3] == 1)  # HIGH = filament present
+
+                # Process each GPIO pin for changes (motion detection and runout events)
                 for pin in range(4):
                     if current_gpio[pin] is not None and self.last_gpio[pin] is not None:
                         if current_gpio[pin] != self.last_gpio[pin]:
@@ -234,16 +255,13 @@ class FilamentMonitor:
                 self.add_message(f"S1: Pulse #{self.total_pulses[1]} ({self.total_distance_mm[1]:.1f}mm total)")
 
         elif pin == 1:  # Sensor 1 Runout
-            if new_value == 1:  # HIGH = no filament
-                if self.sensor_data[1]['has_filament']:
-                    self.sensor_data[1]['has_filament'] = False
-                    self.sensor_data[1]['runout_events'] += 1
-                    self.total_runout_events[1] += 1
-                    self.add_message("[ALERT] Sensor 1: FILAMENT RUNOUT!")
-            else:  # LOW = filament present
-                if not self.sensor_data[1]['has_filament']:
-                    self.sensor_data[1]['has_filament'] = True
-                    self.add_message("Sensor 1: Filament inserted")
+            # Track runout events when filament goes from present to absent
+            if old_value == 1 and new_value == 0:  # HIGH to LOW = filament removed
+                self.sensor_data[1]['runout_events'] += 1
+                self.total_runout_events[1] += 1
+                self.add_message("[ALERT] Sensor 1: FILAMENT RUNOUT!")
+            elif old_value == 0 and new_value == 1:  # LOW to HIGH = filament inserted
+                self.add_message("Sensor 1: Filament inserted")
 
         elif pin == 2:  # Sensor 2 Motion
             if old_value == 1 and new_value == 0:  # Falling edge = pulse
@@ -265,31 +283,22 @@ class FilamentMonitor:
                 self.add_message(f"S2: Pulse #{self.total_pulses[2]} ({self.total_distance_mm[2]:.1f}mm total)")
 
         elif pin == 3:  # Sensor 2 Runout
-            if new_value == 1:  # HIGH = no filament
-                if self.sensor_data[2]['has_filament']:
-                    self.sensor_data[2]['has_filament'] = False
-                    self.sensor_data[2]['runout_events'] += 1
-                    self.total_runout_events[2] += 1
-                    self.add_message("[ALERT] Sensor 2: FILAMENT RUNOUT!")
-            else:  # LOW = filament present
-                if not self.sensor_data[2]['has_filament']:
-                    self.sensor_data[2]['has_filament'] = True
-                    self.add_message("Sensor 2: Filament inserted")
+            # Track runout events when filament goes from present to absent
+            if old_value == 1 and new_value == 0:  # HIGH to LOW = filament removed
+                self.sensor_data[2]['runout_events'] += 1
+                self.total_runout_events[2] += 1
+                self.add_message("[ALERT] Sensor 2: FILAMENT RUNOUT!")
+            elif old_value == 0 and new_value == 1:  # LOW to HIGH = filament inserted
+                self.add_message("Sensor 2: Filament inserted")
 
     def update_display(self):
         """Update the terminal display (non-scrolling)."""
-        # Clear screen and move cursor to home position
-        if os.name == 'nt':  # Windows
-            os.system('cls')
-        else:
-            print('\033[2J\033[H', end='')
-
         uptime = (datetime.now() - self.session_start_time).total_seconds()
         hours = int(uptime // 3600)
         minutes = int((uptime % 3600) // 60)
         seconds = int(uptime % 60)
 
-        # Build display buffer
+        # Build entire display in memory first
         lines = []
         lines.append("=" * 60)
         lines.append("MCP2221A DUAL FILAMENT SENSOR MONITOR v3".center(60))
@@ -361,9 +370,23 @@ class FilamentMonitor:
         lines.append("-" * 60)
         lines.append("Ctrl+C to stop | Auto-saves every 30 seconds")
 
-        # Print all lines
+        # Build complete frame
         output = '\n'.join(lines[:30])
+
+        # Use cursor positioning to overwrite previous display without clearing
+        if os.name == 'nt':  # Windows
+            # Move cursor to home position without clearing
+            print('\033[H', end='')
+        else:
+            # Move cursor to home position
+            print('\033[H', end='')
+
+        # Write entire frame at once
         print(output, end='')
+
+        # Clear any remaining lines from previous frame
+        print('\033[J', end='')
+
         sys.stdout.flush()
 
     def get_status_json(self):
@@ -415,6 +438,12 @@ class FilamentMonitor:
             return False
 
         self.running = True
+
+        # Enable ANSI escape codes on Windows
+        if os.name == 'nt':
+            os.system('')  # Enables ANSI codes in Windows terminal
+
+        # Initial screen clear
         self.clear_screen()
 
         monitor_thread = threading.Thread(target=self.monitor_loop)
