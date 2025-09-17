@@ -3,7 +3,7 @@ EasyMCP2221==1.8.3
 fastapi==0.116.2
 uvicorn[standard]==0.30.6
 textual==0.47.1
-pydantic==2.4.0
+pydantic==2.11.9
 PyYAML==6.0.2
 structlog==23.2.0
 python-dotenv==1.0.0
