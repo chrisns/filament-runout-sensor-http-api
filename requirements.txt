@@ -1,7 +1,7 @@
 # Core dependencies
 EasyMCP2221==1.8.4
 fastapi==0.117.1
-uvicorn[standard]==0.36.0
+uvicorn[standard]==0.36.1
 textual==6.1.0
 pydantic==2.11.9
 PyYAML==6.0.2
