@@ -6,7 +6,7 @@ textual==6.4.0
 pydantic==2.12.3
 PyYAML==6.0.3
 structlog==25.4.0
-python-dotenv==1.1.1
+python-dotenv==1.2.1
 
 # Testing dependencies
 pytest==8.4.2
