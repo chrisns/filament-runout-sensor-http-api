@@ -1,6 +1,6 @@
 # Core dependencies
 EasyMCP2221==1.8.4
-fastapi==0.123.1
+fastapi==0.123.3
 uvicorn[standard]==0.38.0
 textual==6.7.1
 pydantic==2.12.5
